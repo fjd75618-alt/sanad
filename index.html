@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>سند · SANAD</title>
+<meta name="description" content="نظام سند لإدارة المقاصف">
+<meta name="theme-color" content="#FAF8F3">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="سند">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+html,body{margin:0;height:100%;background:#FAF8F3;overflow:hidden;font-family:system-ui,-apple-system,'Segoe UI',Tahoma,sans-serif;color:#12201C}
+#app{position:fixed;inset:0;width:100%;height:100%;border:0;display:block;background:#FAF8F3}
+#splash{position:fixed;inset:0;z-index:5;background:#FAF8F3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .4s}
+#splash.hide{opacity:0;pointer-events:none}
+#splash img{width:96px;height:96px;animation:pulse 1.4s ease-in-out infinite}
+#splash p{margin:0;font-size:14px;color:#5C6B66}
+@keyframes pulse{50%{transform:scale(.93);opacity:.8}}
+.bar{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:10;max-width:480px;margin:0 auto;background:#12201C;color:#FAF8F3;border-radius:18px;padding:14px 16px;display:none;align-items:center;gap:12px;font-size:14px;line-height:1.6;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+.bar.show{display:flex}
+.bar img{width:40px;height:40px;border-radius:11px;flex:none}
+.bar span{flex:1}
+.bar button{height:40px;padding:0 14px;border:none;border-radius:12px;font-family:inherit;font-size:14px;cursor:pointer;flex:none}
+.bar .go{background:#0B5D4B;color:#fff;font-weight:600}
+.bar .x{background:transparent;color:#B9E4CF;padding:0 6px}
+#off{position:fixed;inset:0;z-index:6;background:#FAF8F3;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center}
+#off.show{display:flex}
+#off img{width:72px;height:72px}
+#off b{font-size:18px}#off p{margin:0;color:#5C6B66;font-size:14px;line-height:1.7}
+#off button{height:48px;padding:0 24px;border:none;border-radius:14px;background:#0B5D4B;color:#fff;font-family:inherit;font-size:15px}
+@media (prefers-reduced-motion:reduce){#splash img{animation:none}}
+</style>
+</head>
+<body>
+<div id="splash"><img src="icon-192.png" alt="سند"><p>لحظة…</p></div>
+<div id="off" role="alert"><img src="icon-192.png" alt=""><b>ما فيه اتصال</b><p>تأكد من النت وارجع جرّب.<br>اللي سجلته قبل محفوظ في جوالك.</p><button type="button" onclick="location.reload()">جرّب مرة ثانية</button></div>
+<div class="bar" id="ins" role="dialog" aria-label="تثبيت سند"><img src="icon-192.png" alt=""><span id="insT">ثبّت سند على جوالك عشان يفتح مثل التطبيق</span><button class="go" id="insGo" type="button">تثبيت</button><button class="x" id="insX" type="button" aria-label="إغلاق">✕</button></div>
+
+<script>
+(function () {
+  'use strict';
+  /* ═══ الرابط الرسمي لنظام سند — ما يتغير ═══ */
+  var APP_URL = 'https://script.google.com/macros/s/AKfycbyGpZXFoPyezeBBB3hAcnxDYJXw6gN1USfKZAgEZgj8N-Kp3M_P5oTQh16S9JcOKpLJ/exec';
+
+  var splash = document.getElementById('splash');
+  function hideSplash() { splash.classList.add('hide'); setTimeout(function () { splash.style.display = 'none'; }, 450); }
+
+  /* بدون نت: رسالة واضحة بدل صفحة خطأ */
+  if (navigator.onLine === false) { document.getElementById('off').classList.add('show'); hideSplash(); }
+  else {
+    var f = document.createElement('iframe');
+    f.id = 'app';
+    f.title = 'سند';
+    f.allow = 'geolocation; camera; microphone; autoplay; clipboard-write; fullscreen';
+    f.src = APP_URL;
+    f.addEventListener('load', function () { setTimeout(hideSplash, 250); });
+    document.body.appendChild(f);
+    setTimeout(hideSplash, 8000);   // احتياط
+  }
+
+  /* الاهتزاز: النظام داخل إطار قوقل يطلبه من هنا (المتصفح يمنعه داخل الإطارات) */
+  function trusted(o) { return o === 'https://script.google.com' || /^https:\/\/[a-z0-9-]+\.googleusercontent\.com$/.test(o); }
+  window.addEventListener('message', function (e) {
+    if (!trusted(e.origin) || !e.data || e.data.sanad !== 'buzz') return;
+    var p = e.data.p;
+    if (typeof p === 'number') p = Math.min(Math.max(p, 0), 400);
+    else if (Array.isArray(p)) p = p.slice(0, 12).map(function (n) { return Math.min(Math.max(Number(n) || 0, 0), 400); });
+    else return;
+    try { if (navigator.vibrate) navigator.vibrate(p); } catch (x) {}
+  });
+
+  /* التثبيت */
+  var bar = document.getElementById('ins'), go = document.getElementById('insGo');
+  var standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  var dismissed = false; try { dismissed = !!localStorage.getItem('sanad_ins_x'); } catch (x) {}
+  var deferred = null;
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault(); deferred = e;
+    if (!standalone && !dismissed) setTimeout(function () { bar.classList.add('show'); }, 3000);
+  });
+  go.addEventListener('click', function () {
+    if (deferred) { deferred.prompt(); deferred.userChoice.then(function () { deferred = null; bar.classList.remove('show'); }); }
+    else bar.classList.remove('show');
+  });
+  document.getElementById('insX').addEventListener('click', function () {
+    bar.classList.remove('show'); try { localStorage.setItem('sanad_ins_x', '1'); } catch (x) {}
+  });
+  /* آيفون: ما فيه زر تثبيت تلقائي، نعطيه الطريقة */
+  var ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  if (ios && !standalone && !dismissed) {
+    document.getElementById('insT').textContent = 'لتثبيت سند: اضغط زر المشاركة تحت ثم "إضافة إلى الشاشة الرئيسية"';
+    go.style.display = 'none';
+    setTimeout(function () { bar.classList.add('show'); }, 3000);
+  }
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+  }
+})();
+</script>
+</body>
+</html>
