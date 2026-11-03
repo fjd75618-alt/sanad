@@ -75,20 +75,6 @@ html,body{margin:0;height:100%;background:#FAF8F3;overflow:hidden;font-family:sy
     try { if (navigator.vibrate) navigator.vibrate(p); } catch (x) {}
   });
 
-  /* فحص الاهتزاز: افتح الرابط وفي آخره ?test */
-  if (/[?&]test\b/.test(location.search)) {
-    var tb = document.createElement('button');
-    tb.type = 'button';
-    tb.textContent = 'جرّب الاهتزاز';
-    tb.style.cssText = 'position:fixed;top:12px;left:12px;z-index:20;height:44px;padding:0 16px;border:none;border-radius:12px;background:#B42318;color:#fff;font:600 14px system-ui';
-    tb.addEventListener('click', function () {
-      var ok = false;
-      try { ok = !!(navigator.vibrate && navigator.vibrate([200, 100, 200])); } catch (x) {}
-      tb.textContent = navigator.vibrate ? (ok ? 'المفروض اهتز ✓' : 'الجوال رفض الاهتزاز') : 'هالجوال ما يدعم الاهتزاز';
-    });
-    document.body.appendChild(tb);
-  }
-
   /* التثبيت */
   var bar = document.getElementById('ins'), go = document.getElementById('insGo');
   var standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
