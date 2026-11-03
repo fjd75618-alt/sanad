@@ -1,6 +1,6 @@
 /* سند — يحفظ صفحة الغلاف والأيقونات في الجوال عشان تفتح بسرعة
    (بيانات النظام نفسها ما تنحفظ هنا، تروح للشيت مباشرة) */
-var CACHE = 'sanad-v1';
+var CACHE = 'sanad-v2';
 var FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable.png', './apple-touch-icon.png', './favicon.png'];
 
 self.addEventListener('install', function (e) {
