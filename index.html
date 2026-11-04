@@ -75,18 +75,19 @@ html,body{margin:0;height:100%;background:#FAF8F3;overflow:hidden;font-family:sy
     try { if (navigator.vibrate) navigator.vibrate(p); } catch (x) {}
   });
 
-  /* مشاركة تقرير الجرد: النظام داخل إطار قوقل يرسل الصورة، وهنا نفتح قائمة المشاركة (واتساب)
-     المسموح: صورة PNG بس، والمشاركة نفسها ما تصير إلا بموافقة المستخدم من قائمة الجوال */
+  /* مشاركة تقرير الجرد: النظام داخل إطار قوقل يرسل صفحات التقرير (صور)، وهنا نفتح قائمة المشاركة (واتساب)
+     المسموح: صور PNG بس (حتى ١٢ صفحة)، والمشاركة نفسها ما تصير إلا بموافقة المستخدم من قائمة الجوال */
   window.addEventListener('message', function (e) {
     if (!e.data || e.data.sanad !== 'share' || !e.source) return;
     var reply = function (o) { o.sanad = 'share-r'; try { e.source.postMessage(o, '*'); } catch (x) {} };
-    var f = e.data.file;
-    if (!(f instanceof Blob) || f.type !== 'image/png' || f.size > 15e6) { reply({ ok: false }); return; }
-    var file = f instanceof File ? f : new File([f], 'تقرير-جرد.png', { type: 'image/png' });
+    var list = Array.isArray(e.data.files) ? e.data.files.slice(0, 12) : (e.data.file ? [e.data.file] : []);
+    var okType = list.length && list.every(function (f) { return f instanceof Blob && f.type === 'image/png' && f.size <= 15e6; });
+    if (!okType) { reply({ ok: false }); return; }
+    var files = list.map(function (f, i) { return f instanceof File ? f : new File([f], 'sanad-' + (i + 1) + '.png', { type: 'image/png' }); });
     var text = String(e.data.text || '').slice(0, 300);
     try {
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        navigator.share({ files: [file], text: text })
+      if (navigator.canShare && navigator.canShare({ files: files })) {
+        navigator.share({ files: files, text: text })
           .then(function () { reply({ ok: true }); })
           .catch(function (err) { reply({ ok: false, abort: !!(err && err.name === 'AbortError') }); });
         return;
