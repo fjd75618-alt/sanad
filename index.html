@@ -56,7 +56,7 @@ html,body{margin:0;height:100%;background:#FAF8F3;overflow:hidden;font-family:sy
     var f = document.createElement('iframe');
     f.id = 'app';
     f.title = 'سند';
-    f.allow = 'geolocation; camera; microphone; autoplay; clipboard-write; fullscreen';
+    f.allow = 'geolocation; camera; microphone; autoplay; clipboard-write; fullscreen; web-share';
     f.src = APP_URL;
     f.addEventListener('load', function () { setTimeout(hideSplash, 250); });
     document.body.appendChild(f);
@@ -73,6 +73,26 @@ html,body{margin:0;height:100%;background:#FAF8F3;overflow:hidden;font-family:sy
     else if (Array.isArray(p)) p = p.slice(0, 12).map(function (n) { return Math.min(Math.max(Number(n) || 0, 0), 400); });
     else return;
     try { if (navigator.vibrate) navigator.vibrate(p); } catch (x) {}
+  });
+
+  /* مشاركة تقرير الجرد: النظام داخل إطار قوقل يرسل الصورة، وهنا نفتح قائمة المشاركة (واتساب)
+     المسموح: صورة PNG بس، والمشاركة نفسها ما تصير إلا بموافقة المستخدم من قائمة الجوال */
+  window.addEventListener('message', function (e) {
+    if (!e.data || e.data.sanad !== 'share' || !e.source) return;
+    var reply = function (o) { o.sanad = 'share-r'; try { e.source.postMessage(o, '*'); } catch (x) {} };
+    var f = e.data.file;
+    if (!(f instanceof Blob) || f.type !== 'image/png' || f.size > 15e6) { reply({ ok: false }); return; }
+    var file = f instanceof File ? f : new File([f], 'تقرير-جرد.png', { type: 'image/png' });
+    var text = String(e.data.text || '').slice(0, 300);
+    try {
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], text: text })
+          .then(function () { reply({ ok: true }); })
+          .catch(function (err) { reply({ ok: false, abort: !!(err && err.name === 'AbortError') }); });
+        return;
+      }
+    } catch (x) {}
+    reply({ ok: false, unsupported: true });
   });
 
   /* التثبيت */
